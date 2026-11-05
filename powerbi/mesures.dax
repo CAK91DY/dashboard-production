@@ -1,0 +1,289 @@
+// =====================================================================================
+//  Mesures DAX — Pilotage production & maintenance (données fictives)
+//  Modèle : powerbi/donnees/donnees_pilotage_production.xlsx (voir powerbi/GUIDE_POWER_BI.md)
+//
+//  Mode d'emploi (Power BI Desktop, vue « Requête DAX ») :
+//    1. Créer d'abord la table vide _Mesures (Modélisation > Nouvelle table : _Mesures = ROW("x", 0)).
+//    2. Coller TOUT ce fichier dans la vue Requête DAX.
+//    3. Cliquer « Mettre à jour le modèle avec les modifications » : les mesures sont créées.
+//    4. Exécuter (F5) : le tableau de contrôle d'octobre 2026 s'affiche ; comparer avec
+//       la colonne « Attendu » du guide (59 739 t ; 96,4 % ; 95,1 % ; 39,0 h ; Mécanique 65 %).
+//  Formats d'affichage : à régler ensuite sur chaque mesure (liste dans le guide, §4).
+// =====================================================================================
+DEFINE
+
+    // ------------------------------------------------------------- 1. Production et plan
+    MEASURE _Mesures[Production (t)] =
+        SUM ( Fait_Production_Horaire[Production_t] )
+
+    // Production des seules unités de polymères (PEBD + PP) ; KEEPFILTERS respecte le segment « Unités »
+    MEASURE _Mesures[Production polymères (t)] =
+        CALCULATE ( [Production (t)], KEEPFILTERS ( Dim_Unite[Famille] = "Polymère" ) )
+
+    MEASURE _Mesures[Plan (t)] =
+        SUM ( Fait_Plan[Plan_t] )
+
+    MEASURE _Mesures[Plan polymères (t)] =
+        CALCULATE ( [Plan (t)], KEEPFILTERS ( Dim_Unite[Famille] = "Polymère" ) )
+
+    MEASURE _Mesures[Écart au plan (t)] =
+        [Production polymères (t)] - [Plan polymères (t)]
+
+    MEASURE _Mesures[Réalisation du plan %] =
+        DIVIDE ( [Production polymères (t)], [Plan polymères (t)] )
+
+    // Écart en points, calculé AVANT arrondi : 96,35 % -> -3,65 pt -> affiché « -3,6 pt »
+    MEASURE _Mesures[Écart réalisation (pt)] =
+        ( [Réalisation du plan %] - 1 ) * 100
+
+    // Jour le plus bas de la période (les jours sans données sont exclus)
+    MEASURE _Mesures[Jour le plus bas (t)] =
+        MINX (
+            FILTER ( VALUES ( Dim_Date[Date] ), NOT ISBLANK ( [Production polymères (t)] ) ),
+            [Production polymères (t)]
+        )
+
+    MEASURE _Mesures[Date du jour le plus bas] =
+        VAR Jours =
+            ADDCOLUMNS (
+                FILTER ( VALUES ( Dim_Date[Date] ), NOT ISBLANK ( [Production polymères (t)] ) ),
+                "@Prod", [Production polymères (t)]
+            )
+        VAR Mini = MINX ( Jours, [@Prod] )
+        RETURN MAXX ( FILTER ( Jours, [@Prod] = Mini ), Dim_Date[Date] )
+
+    // Série « marqueur » de la courbe : valeur uniquement le jour le plus bas (point + étiquette)
+    MEASURE _Mesures[Marqueur jour le plus bas] =
+        VAR Mini = CALCULATE ( [Jour le plus bas (t)], ALLSELECTED ( Dim_Date ) )
+        VAR Prod = [Production polymères (t)]
+        RETURN IF ( NOT ISBLANK ( Prod ) && Prod = Mini, Prod )
+
+    // Zone colorée de la courbe : jours où la production est sous 90 % du plan.
+    // Renvoie le haut de l'axe (110 % du plan max) pour tracer une colonne pleine hauteur.
+    MEASURE _Mesures[Zone incident] =
+        VAR Seuil = 0.90
+        VAR HautAxe = CALCULATE ( MAXX ( VALUES ( Dim_Date[Date] ), [Plan polymères (t)] ), ALLSELECTED ( Dim_Date ) ) * 1.1
+        RETURN IF ( [Production polymères (t)] < Seuil * [Plan polymères (t)], HautAxe )
+
+    // ------------------------------------------------------------- 2. Disponibilité
+    MEASURE _Mesures[Minutes calendrier] =
+        SUM ( Fait_Production_Horaire[Minutes_Calendrier] )
+
+    MEASURE _Mesures[Minutes de marche] =
+        SUM ( Fait_Production_Horaire[Minutes_Marche] )
+
+    // Ratio brut temps de marche / temps calendaire (pondéré par le nombre de lignes)
+    MEASURE _Mesures[Disponibilité ratio global %] =
+        DIVIDE ( [Minutes de marche], [Minutes calendrier] )
+
+    // MESURE À UTILISER PARTOUT : moyenne simple des unités (1 unité = 1 poids).
+    // Pour une seule unité, elle vaut le ratio de l'unité. Sur octobre 2026 : 95,1 %
+    // (le ratio global donnerait 94,9 %, car PEBD et PP ont 2 lignes chacun).
+    MEASURE _Mesures[Disponibilité %] =
+        AVERAGEX (
+            FILTER ( VALUES ( Dim_Unite[Unite] ), NOT ISBLANK ( [Minutes calendrier] ) ),
+            [Disponibilité ratio global %]
+        )
+
+    // Variante « opérationnelle » : exclut les grands arrêts PLANIFIÉS du temps requis.
+    // Utile pour les tendances sur 24 mois (les arrêts programmés ne sont pas des pertes).
+    MEASURE _Mesures[Disponibilité hors arrêts planifiés %] =
+        AVERAGEX (
+            FILTER ( VALUES ( Dim_Unite[Unite] ), NOT ISBLANK ( [Minutes calendrier] ) ),
+            DIVIDE (
+                [Minutes de marche],
+                // CALCULATE : transition de contexte, pour filtrer sur l'unité en cours d'itération
+                [Minutes calendrier] - CALCULATE ( SUM ( Fait_Production_Horaire[Minutes_Arret_Planifie] ) )
+            )
+        )
+
+    MEASURE _Mesures[Objectif disponibilité] =
+        MAX ( Dim_Unite[Objectif_Dispo] )
+
+    MEASURE _Mesures[Écart dispo vs objectif (pt)] =
+        ( [Disponibilité %] - [Objectif disponibilité] ) * 100
+
+    MEASURE _Mesures[Nb unités] =
+        COUNTROWS ( FILTER ( VALUES ( Dim_Unite[Unite] ), NOT ISBLANK ( [Minutes calendrier] ) ) )
+
+    MEASURE _Mesures[Unités sous objectif] =
+        COUNTROWS (
+            FILTER (
+                VALUES ( Dim_Unite[Unite] ),
+                NOT ISBLANK ( [Minutes calendrier] ) && [Disponibilité %] < [Objectif disponibilité]
+            )
+        )
+
+    // Où partent les heures de ligne (pertes de disponibilité, en heures-ligne)
+    MEASURE _Mesures[Heures arrêt ligne non planifié] =
+        DIVIDE ( SUM ( Fait_Production_Horaire[Minutes_Arret_Non_Planifie] ), 60 )
+
+    MEASURE _Mesures[Heures arrêt ligne planifié] =
+        DIVIDE ( SUM ( Fait_Production_Horaire[Minutes_Arret_Planifie] ), 60 )
+
+    MEASURE _Mesures[Heures micro-arrêts] =
+        DIVIDE ( SUM ( Fait_Production_Horaire[Minutes_Micro_Arret] ), 60 )
+
+    // ------------------------------------------------------------- 3. Arrêts (avis SAP PM)
+    // Durée d'indisponibilité de l'ÉQUIPEMENT (≠ temps d'arrêt de la ligne si l'équipement est doublé)
+    MEASURE _Mesures[Heures arrêts non planifiés] =
+        SUM ( Fait_Arrets[Duree_h] )
+
+    MEASURE _Mesures[Nb avis SAP PM] =
+        COUNTROWS ( Fait_Arrets )
+
+    // Temps moyen de réparation (Mean Time To Repair)
+    MEASURE _Mesures[MTTR (h)] =
+        DIVIDE ( [Heures arrêts non planifiés], [Nb avis SAP PM] )
+
+    // Temps moyen de bon fonctionnement entre deux avis (Mean Time Between Failures), en heures-ligne
+    MEASURE _Mesures[MTBF (h)] =
+        DIVIDE ( DIVIDE ( [Minutes de marche], 60 ), [Nb avis SAP PM] )
+
+    // Libellé de l'annotation de la courbe : l'avis le plus long de la période
+    MEASURE _Mesures[Libellé arrêt principal] =
+        MAXX (
+            TOPN ( 1, Fait_Arrets, Fait_Arrets[Duree_h], DESC ),
+            "Arrêt " & LOWER ( LEFT ( Fait_Arrets[Equipement], 1 ) ) & MID ( Fait_Arrets[Equipement], 2, 100 )
+                & " (" & Fait_Arrets[Code_Unite] & ")"
+        )
+
+    MEASURE _Mesures[Cause principale] =
+        VAR ParCause =
+            ADDCOLUMNS ( VALUES ( Dim_Cause[Cause] ), "@Heures", [Heures arrêts non planifiés] )
+        VAR Premiere = TOPN ( 1, FILTER ( ParCause, [@Heures] > 0 ), [@Heures], DESC )
+        RETURN CONCATENATEX ( Premiere, Dim_Cause[Cause], " / " )   // " / " en cas d'égalité
+
+    MEASURE _Mesures[Heures cause principale] =
+        MAXX ( VALUES ( Dim_Cause[Cause] ), [Heures arrêts non planifiés] )
+
+    MEASURE _Mesures[Part cause principale %] =
+        DIVIDE ( [Heures cause principale], [Heures arrêts non planifiés] )
+
+    // Pareto : part cumulée des heures d'arrêt, de la cause la plus lourde à la plus légère
+    MEASURE _Mesures[Pareto cumul %] =
+        VAR HeuresCause = [Heures arrêts non planifiés]
+        VAR Toutes =
+            ADDCOLUMNS ( ALLSELECTED ( Dim_Cause[Cause] ), "@Heures", [Heures arrêts non planifiés] )
+        RETURN
+            IF (
+                NOT ISBLANK ( HeuresCause ),
+                DIVIDE ( SUMX ( FILTER ( Toutes, [@Heures] >= HeuresCause ), [@Heures] ), SUMX ( Toutes, [@Heures] ) )
+            )
+
+    // ------------------------------------------------------------- 4. Comparaisons dans le temps
+    MEASURE _Mesures[Production polymères N-1 (t)] =
+        CALCULATE ( [Production polymères (t)], SAMEPERIODLASTYEAR ( Dim_Date[Date] ) )
+
+    MEASURE _Mesures[Évolution vs N-1 %] =
+        DIVIDE ( [Production polymères (t)] - [Production polymères N-1 (t)], [Production polymères N-1 (t)] )
+
+    MEASURE _Mesures[Production cumul annuel (t)] =
+        TOTALYTD ( [Production polymères (t)], Dim_Date[Date] )
+
+    MEASURE _Mesures[Plan cumul annuel (t)] =
+        TOTALYTD ( [Plan polymères (t)], Dim_Date[Date] )
+
+    MEASURE _Mesures[Disponibilité 12 mois glissants %] =
+        CALCULATE ( [Disponibilité %], DATESINPERIOD ( Dim_Date[Date], MAX ( Dim_Date[Date] ), -12, MONTH ) )
+
+    // ------------------------------------------------------------- 5. Textes des cartes (format français)
+    MEASURE _Mesures[Période] =
+        VAR Debut = CALCULATE ( MIN ( Fait_Production_Horaire[Date] ) )
+        VAR Fin = CALCULATE ( MAX ( Fait_Production_Horaire[Date] ) )
+        VAR MoisFin = FORMAT ( Fin, "mmmm yyyy", "fr-FR" )
+        RETURN
+            IF (
+                FORMAT ( Debut, "yyyymm" ) = FORMAT ( Fin, "yyyymm" ),
+                UPPER ( LEFT ( MoisFin, 1 ) ) & MID ( MoisFin, 2, 50 ),               // « Octobre 2026 »
+                FORMAT ( Debut, "mmm yyyy", "fr-FR" ) & " – " & FORMAT ( Fin, "mmm yyyy", "fr-FR" )
+            )
+
+    MEASURE _Mesures[Titre du rapport] =
+        "Pilotage production & maintenance — " & [Période]
+
+    MEASURE _Mesures[Texte plan] =
+        "plan : " & FORMAT ( [Plan polymères (t)], "#,##0", "fr-FR" ) & " t"
+
+    MEASURE _Mesures[Texte écart plan] =
+        VAR Ecart = [Écart réalisation (pt)]
+        RETURN
+            IF (
+                Ecart < 0,
+                "▼ " & FORMAT ( ABS ( Ecart ), "0.0", "fr-FR" ) & " pt sous le plan",
+                "▲ " & FORMAT ( Ecart, "0.0", "fr-FR" ) & " pt au-dessus du plan"
+            )
+
+    // Couleur du texte précédent (mise en forme conditionnelle > valeur du champ)
+    MEASURE _Mesures[Couleur écart plan] =
+        IF ( [Écart réalisation (pt)] < 0, "#B5482A", "#2E7D32" )
+
+    MEASURE _Mesures[Texte disponibilité] =
+        [Nb unités] & " unités, objectif " & FORMAT ( [Objectif disponibilité], "0 %", "fr-FR" )
+
+    MEASURE _Mesures[Texte avis] =
+        [Nb avis SAP PM] & " avis SAP PM"
+
+    MEASURE _Mesures[Texte cause] =
+        FORMAT ( [Heures cause principale], "0.0", "fr-FR" ) & " h, soit "
+            & FORMAT ( [Part cause principale %], "0 %", "fr-FR" ) & " des arrêts"
+
+    // Étiquette des barres : valeur + mention textuelle sous l'objectif (pas seulement la couleur)
+    MEASURE _Mesures[Étiquette disponibilité] =
+        FORMAT ( [Disponibilité %], "0.0 %", "fr-FR" )
+            & IF ( [Disponibilité %] < [Objectif disponibilité], "  ▼ sous l'objectif" )
+
+    MEASURE _Mesures[Libellé jour le plus bas] =
+        FORMAT ( [Jour le plus bas (t)], "#,##0", "fr-FR" ) & " t le "
+            & FORMAT ( [Date du jour le plus bas], "d mmmm", "fr-FR" )
+
+    // ------------------------------------------------------------- 6. Carte de chaleur
+    // Couleur de fond des cellules (plus foncé = moins disponible) : mise en forme > valeur du champ
+    MEASURE _Mesures[Couleur disponibilité] =
+        VAR D = [Disponibilité %]
+        RETURN
+            SWITCH (
+                TRUE (),
+                ISBLANK ( D ), BLANK (),
+                D >= 0.97, "#DBE8FB",
+                D >= 0.93, "#9EC5F4",
+                D >= 0.85, "#3F7FD8",
+                "#163D73"
+            )
+
+    MEASURE _Mesures[Classe disponibilité] =
+        VAR D = [Disponibilité %]
+        RETURN
+            SWITCH ( TRUE (), ISBLANK ( D ), BLANK (), D >= 0.97, "≥ 97 %", D >= 0.93, "93–97 %", D >= 0.85, "85–93 %", "< 85 %" )
+
+// ------------------------------------------------------------- Contrôle : octobre 2026
+EVALUATE
+CALCULATETABLE (
+    ROW (
+        "Production", [Production polymères (t)],                          // attendu 59 739
+        "Plan", [Plan polymères (t)],                        // attendu 62 000
+        "Réalisation", [Réalisation du plan %],                          // attendu 0,9635
+        "Écart pt", [Écart réalisation (pt)],                            // attendu -3,65
+        "Jour mini (t)", [Jour le plus bas (t)],                    // attendu 1 440
+        "Date mini", [Date du jour le plus bas],               // attendu 15/10/2026
+        "Dispo moyenne", [Disponibilité %],                              // attendu 0,9509
+        "Dispo ratio global", [Disponibilité ratio global %],            // 0,9493 : NE PAS afficher
+        "Arrêts NP (h)", [Heures arrêts non planifiés],                 // attendu 39
+        "Avis", [Nb avis SAP PM],                                       // attendu 5
+        "Cause", [Cause principale],                            // attendu Mécanique
+        "Part cause", [Part cause principale %],                         // attendu 0,654
+        "Texte", [Texte cause]                                       // « 25,5 h, soit 65 % des arrêts »
+    ),
+    Dim_Date[Cle_Mois] = 202610
+)
+
+EVALUATE
+CALCULATETABLE (
+    ADDCOLUMNS (
+        VALUES ( Dim_Unite[Unite] ),
+        "Dispo unité", [Disponibilité %],                                 // 0,9886 / 0,9663 / 0,9261 / 0,9224
+        "Étiquette", [Étiquette disponibilité]
+    ),
+    Dim_Date[Cle_Mois] = 202610
+)
+ORDER BY [Dispo unité] DESC

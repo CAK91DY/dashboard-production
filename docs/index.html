@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pilotage production & maintenance</title>
+  <meta name="description" content="Exemple de tableau de bord production et maintenance, site pétrochimique — données entièrement fictives.">
+  <link rel="stylesheet" href="style.css">
+  <!-- Seule bibliothèque de graphiques : Chart.js, version fixée -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="page">
+
+    <!-- 1. Bandeau -->
+    <header class="bandeau">
+      <div>
+        <p class="surtitre">Exemple de tableau de bord · Industrie de procédés</p>
+        <h1 id="titre">Pilotage production &amp; maintenance</h1>
+      </div>
+      <span class="badge">Données entièrement fictives</span>
+    </header>
+
+    <!-- Filtres affichés (informatifs) -->
+    <ul class="filtres" aria-label="Périmètre du tableau de bord">
+      <li>Période <strong id="filtre-periode">…</strong></li>
+      <li>Site <strong>Site pétrochimique (exemple)</strong></li>
+      <li>Unités <strong>Toutes</strong></li>
+      <li>Mise à jour <strong>chaque nuit, J+1</strong></li>
+    </ul>
+
+    <!-- 2. Cinq indicateurs (remplis par app.js) -->
+    <section class="kpis" aria-label="Indicateurs clés">
+      <article class="kpi"><h2>Production polymères</h2><p class="valeur" id="kpi-prod">…</p><p class="detail" id="kpi-prod-detail"></p></article>
+      <article class="kpi"><h2>Réalisation du plan</h2><p class="valeur" id="kpi-real">…</p><p class="detail" id="kpi-real-detail"></p></article>
+      <article class="kpi"><h2>Disponibilité moyenne</h2><p class="valeur" id="kpi-dispo">…</p><p class="detail" id="kpi-dispo-detail"></p></article>
+      <article class="kpi"><h2>Arrêts non planifiés</h2><p class="valeur" id="kpi-arrets">…</p><p class="detail" id="kpi-arrets-detail"></p></article>
+      <article class="kpi"><h2>Cause principale</h2><p class="valeur" id="kpi-cause">…</p><p class="detail" id="kpi-cause-detail"></p></article>
+    </section>
+
+    <section class="grille grille-haut">
+      <!-- 3. Courbe production vs plan -->
+      <article class="carte">
+        <h2>Production journalière vs plan (t/j)</h2>
+        <div class="zone-courbe"><canvas id="courbe" role="img" aria-label="Courbe de la production journalière comparée au plan"></canvas></div>
+      </article>
+
+      <!-- 4. Disponibilité par unité -->
+      <article class="carte">
+        <h2>Disponibilité moyenne par unité</h2>
+        <div id="barres" class="barres"></div>
+        <p class="note" id="barres-note"></p>
+      </article>
+    </section>
+
+    <section class="grille grille-bas">
+      <!-- 5. Carte de chaleur -->
+      <article class="carte">
+        <h2>Disponibilité jour par jour</h2>
+        <div class="defilement"><div id="chaleur" class="chaleur"></div></div>
+        <p class="astuce">← faites défiler horizontalement →</p>
+        <ul id="legende" class="legende" aria-label="Légende de la carte de chaleur"></ul>
+      </article>
+
+      <!-- 6. Tableau des arrêts -->
+      <article class="carte">
+        <h2>Principaux arrêts du mois</h2>
+        <div class="defilement">
+          <table class="tableau">
+            <thead><tr><th>Date</th><th>Équipement</th><th>Unité</th><th>Cause</th><th class="num">Durée</th></tr></thead>
+            <tbody id="arrets"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <!-- 7. Pied de page -->
+    <footer class="pied">
+      Chaîne de données visée : extractions SAP (PP, PM) → Cloud Storage → BigQuery → transformations SQL dbt
+      → tableau de bord. Équipements, volumes et arrêts inventés pour illustration. · Réalisation : Christophe, Data Analyst BI
+    </footer>
+    <p id="erreur" class="erreur" hidden></p>
+  </main>
+</body>
+</html>
