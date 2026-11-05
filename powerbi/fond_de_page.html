@@ -1,0 +1,80 @@
+<!doctype html>
+<!-- Source de l'image de fond de page Power BI (1280 x 720), exportée en PNG.
+     ?plan dans l'URL : affiche en plus les emplacements des visuels (plan de montage). -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fond de page Power BI</title>
+<style>
+  :root { --fond:#F4F5F7; --carte:#FFFFFF; --bord:#E3E6EB; --texte:#1B2433; --texte2:#5B6473; --texte3:#8A92A0;
+          --bandeau:#1B2433; --accent:#E07B4F; }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1280px; height: 720px; background: var(--fond); font-family: "Segoe UI", Inter, sans-serif; color: var(--texte); position: relative; overflow: hidden; }
+  .bloc { position: absolute; }
+  .carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 10px; }
+  .titre { position: absolute; left: 16px; top: 11px; font-size: 14px; font-weight: 600; }
+  .libelle { position: absolute; left: 14px; top: 9px; font-size: 12.5px; color: var(--texte2); }
+  .bandeau { background: var(--bandeau); border-radius: 10px; border-left: 6px solid var(--accent); }
+  .surtitre { position: absolute; left: 20px; top: 8px; font-size: 10.5px; font-weight: 600; letter-spacing: .12em; color: #F0A37F; }
+  .badge { position: absolute; right: 18px; top: 15px; background: #F3C09F; color: var(--bandeau); font-size: 12.5px; font-weight: 600; padding: 4px 12px; border-radius: 999px; }
+  .pastille { background: var(--carte); border: 1px solid var(--bord); border-radius: 6px; font-size: 12px; color: var(--texte2); padding: 5px 10px; white-space: nowrap; }
+  .pastille b { color: var(--texte); margin-left: 4px; }
+  .legende { position: absolute; left: 16px; bottom: 12px; display: flex; gap: 18px; font-size: 11px; color: var(--texte2); }
+  .legende span { display: flex; align-items: center; gap: 6px; }
+  .legende i { width: 13px; height: 13px; border-radius: 2px; display: inline-block; }
+  .pied { position: absolute; left: 20px; top: 699px; font-size: 10.5px; color: var(--texte3); }
+  /* Plan de montage (affiché seulement avec ?plan) */
+  .zone { position: absolute; border: 2px dashed #2A78D6; background: rgba(42,120,214,.07); border-radius: 6px;
+          font-size: 11px; color: #1C5CAB; padding: 4px 6px; line-height: 1.3; display: none; }
+  .zone b { display: block; font-size: 11.5px; }
+  body.plan .zone { display: block; }
+</style>
+</head>
+<body>
+  <!-- Bandeau : le titre dynamique est un visuel Carte posé dans la zone libre -->
+  <div class="bloc bandeau" style="left:20px; top:12px; width:1240px; height:56px">
+    <div class="surtitre">EXEMPLE DE TABLEAU DE BORD · INDUSTRIE DE PROCÉDÉS</div>
+    <div class="badge">Données entièrement fictives</div>
+  </div>
+
+  <!-- Pastilles fixes (les segments Période et Unités sont posés à gauche) -->
+  <div class="bloc pastille" style="left:440px; top:77px">Site <b>Site pétrochimique (exemple)</b></div>
+  <div class="bloc pastille" style="left:668px; top:77px">Mise à jour <b>chaque nuit, J+1</b></div>
+
+  <!-- 5 cartes d'indicateurs -->
+  <div class="bloc carte" style="left:20px;   top:112px; width:240px; height:78px"><div class="libelle">Production polymères</div></div>
+  <div class="bloc carte" style="left:270px;  top:112px; width:240px; height:78px"><div class="libelle">Réalisation du plan</div></div>
+  <div class="bloc carte" style="left:520px;  top:112px; width:240px; height:78px"><div class="libelle">Disponibilité moyenne</div></div>
+  <div class="bloc carte" style="left:770px;  top:112px; width:240px; height:78px"><div class="libelle">Arrêts non planifiés</div></div>
+  <div class="bloc carte" style="left:1020px; top:112px; width:240px; height:78px"><div class="libelle">Cause principale</div></div>
+
+  <!-- Graphiques -->
+  <div class="bloc carte" style="left:20px;  top:200px; width:750px; height:262px"><div class="titre">Production journalière vs plan (t/j)</div></div>
+  <div class="bloc carte" style="left:780px; top:200px; width:480px; height:262px"><div class="titre">Disponibilité moyenne par unité</div></div>
+  <div class="bloc carte" style="left:20px;  top:472px; width:620px; height:220px">
+    <div class="titre">Disponibilité jour par jour</div>
+    <div class="legende">
+      <span><i style="background:#DBE8FB"></i>≥ 97 %</span><span><i style="background:#9EC5F4"></i>93–97 %</span>
+      <span><i style="background:#3F7FD8"></i>85–93 %</span><span><i style="background:#163D73"></i>&lt; 85 %</span>
+    </div>
+  </div>
+  <div class="bloc carte" style="left:650px; top:472px; width:610px; height:220px"><div class="titre">Principaux arrêts du mois</div></div>
+
+  <div class="pied">Chaîne de données : extractions SAP (PP, PM) → Cloud Storage → BigQuery → transformations SQL dbt → tableau de bord. Équipements, volumes et arrêts inventés pour illustration. · Réalisation : Christophe, Data Analyst BI</div>
+
+  <!-- ============ Plan de montage : emplacements des visuels (x, y, largeur, hauteur) ============ -->
+  <div class="zone" style="left:36px; top:30px; width:880px; height:34px"><b>① Carte (nouveau) : [Titre du rapport]</b>36, 30, 880, 34</div>
+  <div class="zone" style="left:20px; top:76px; width:200px; height:30px"><b>② Segment Mois_Annee</b></div>
+  <div class="zone" style="left:228px; top:76px; width:204px; height:30px"><b>③ Segment Unite</b></div>
+  <div class="zone" style="left:28px; top:140px; width:224px; height:46px"><b>④ Carte : Production + [Texte plan]</b>28, 140, 224, 52</div>
+  <div class="zone" style="left:278px; top:140px; width:224px; height:46px"><b>⑤ Carte : Réalisation + [Texte écart plan]</b>278, 140</div>
+  <div class="zone" style="left:528px; top:140px; width:224px; height:46px"><b>⑥ Carte : Dispo + [Texte disponibilité]</b>528, 140</div>
+  <div class="zone" style="left:778px; top:140px; width:224px; height:46px"><b>⑦ Carte : Heures arrêts + [Texte avis]</b>778, 140</div>
+  <div class="zone" style="left:1028px; top:140px; width:224px; height:46px"><b>⑧ Carte : Cause + [Texte cause]</b>1028, 140</div>
+  <div class="zone" style="left:28px; top:236px; width:734px; height:218px"><b>⑨ Courbes et histogramme groupé</b>28, 236, 734, 218 — Production, Plan (tirets), Marqueur, Zone incident (colonnes)</div>
+  <div class="zone" style="left:788px; top:236px; width:464px; height:218px"><b>⑩ Barres groupées</b>788, 236, 464, 218 — Unite × [Disponibilité %], ligne constante 0,95</div>
+  <div class="zone" style="left:28px; top:506px; width:604px; height:150px"><b>⑪ Matrice (carte de chaleur)</b>28, 506, 604, 150 — Unite × Jour, fond = [Couleur disponibilité]</div>
+  <div class="zone" style="left:658px; top:506px; width:594px; height:178px"><b>⑫ Table des arrêts</b>658, 506, 594, 178 — Top 5 par durée</div>
+  <script>if (location.search.includes("plan")) document.body.classList.add("plan");</script>
+</body>
+</html>

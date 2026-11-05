@@ -11,7 +11,9 @@ Durée estimée : 2 à 3 h la première fois.
 | `donnees/donnees_pilotage_production.xlsx` | les 7 tables, une feuille chacune (**source recommandée**) |
 | `donnees/*.csv` | les mêmes tables en CSV (séparateur virgule, décimale point, UTF-8) |
 | `mesures.dax` | toutes les mesures plus une requête de contrôle, à coller dans la vue Requête DAX |
-| `theme_pilotage.json` | couleurs et styles de la maquette |
+| `theme_pilotage.json` | couleurs de la maquette ; visuels transparents et sans titre |
+| `fond_de_page_1280x720.png` | image de fond : bandeau, cadres, titres, légende, pied de page |
+| `plan_de_montage.png` | emplacement de chaque visuel, avec ses coordonnées |
 | `../scripts/generer_donnees_powerbi.py` | régénère les données (graine fixe : résultat identique) |
 
 ---
@@ -128,36 +130,66 @@ Production, Disponibilité, Arrêts, Temps, Textes, Mise en forme.
 
 ---
 
-## 5. Mise en page (canevas 16:9, 1280 × 720)
+## 5. Mise en page : image de fond + visuels transparents (30 min)
+
+La méthode la plus rapide pour retrouver exactement la maquette : le bandeau, les cadres blancs,
+les titres, la légende de la carte de chaleur et le pied de page sont **dans une image de fond**
+(`fond_de_page_1280x720.png`). Les visuels sont posés par-dessus, **transparents et sans titre**.
+Le thème le fait par défaut.
 
 1. **Affichage → Thèmes → Parcourir les thèmes** → `theme_pilotage.json`.
-2. **Format de page** : 16:9, fond `#F4F5F7`.
-3. Segments, en haut sous le bandeau, à la place des « pastilles » de la maquette :
-   - `Dim_Date[Mois_Annee]`, **sélection unique**, réglé sur *oct. 2026* ;
-   - `Dim_Unite[Unite]`, sélection multiple (« Toutes » par défaut).
+2. **Format de page** (clic sur le fond du canevas) :
+   - *Paramètres du canevas* : **16:9**, soit 1280 × 720 ;
+   - *Arrière-plan du canevas* : **Ajouter une image** → `fond_de_page_1280x720.png`,
+     ajustement **Ajuster**, transparence **0 %** ;
+   - *Fond d'écran* : `#F4F5F7`.
+3. Ouvre `plan_de_montage.png` à côté : il montre l'emplacement de chaque visuel (①…⑫).
+4. Pour chaque visuel : *Format → Général → Propriétés → Taille et position*, puis saisis
+   les valeurs du tableau. La position tombe pile dans le cadre de l'image.
 
-Placement indicatif (x, y, largeur, hauteur en pixels) :
+| N° | Visuel | X | Y | Largeur | Hauteur |
+|---|---|---|---|---|---|
+| ① | Carte (nouveau) `[Titre du rapport]`, texte blanc 20 pt | 36 | 30 | 880 | 34 |
+| ② | Segment `Dim_Date[Mois_Annee]`, liste déroulante, sélection unique = *oct. 2026* | 20 | 76 | 200 | 30 |
+| ③ | Segment `Dim_Unite[Unite]`, liste déroulante, « Tout sélectionner » | 228 | 76 | 204 | 30 |
+| ④ | Carte Production | 28 | 140 | 224 | 46 |
+| ⑤ | Carte Réalisation | 278 | 140 | 224 | 46 |
+| ⑥ | Carte Disponibilité | 528 | 140 | 224 | 46 |
+| ⑦ | Carte Arrêts | 778 | 140 | 224 | 46 |
+| ⑧ | Carte Cause | 1028 | 140 | 224 | 46 |
+| ⑨ | Courbes et histogramme groupé | 28 | 236 | 734 | 218 |
+| ⑩ | Barres groupées | 788 | 236 | 464 | 218 |
+| ⑪ | Matrice (carte de chaleur) | 28 | 506 | 604 | 150 |
+| ⑫ | Table des arrêts | 658 | 506 | 594 | 178 |
 
-| Zone | Position |
+> Pour modifier l'image (un titre, une couleur), édite `fond_de_page.html` puis refais une
+> capture en 1280 × 720. `plan_de_montage.png` est la même page ouverte avec `?plan`.
+
+### Palette (pour toutes les mises en forme)
+
+| Rôle | Couleur |
 |---|---|
-| Bandeau (rectangle `#1B2433` + titre + badge) | 20, 12, 1240, 60 |
-| Segments | 20, 80, 1240, 32 |
-| 5 cartes d'indicateurs | y = 120, hauteur 80, largeur 240 chacune, espacées de 10 |
-| Courbe production vs plan | 20, 212, 740, 260 |
-| Barres disponibilité par unité | 770, 212, 490, 260 |
-| Carte de chaleur | 20, 482, 615, 210 |
-| Tableau des arrêts | 645, 482, 615, 210 |
-| Pied de page (zone de texte) | 20, 696, 1240, 20 |
+| Fond de page / cartes / bordures | `#F4F5F7` / `#FFFFFF` / `#E3E6EB` |
+| Bandeau / liseré orange / badge | `#1B2433` / `#E07B4F` / `#F3C09F` |
+| Texte principal / secondaire / discret | `#1B2433` / `#5B6473` / `#8A92A0` |
+| Série principale (production, barres) | `#2A78D6` |
+| Plan (tirets), ligne d'objectif | `#5B6473` |
+| Zone d'incident | `#E07B4F`, transparence 85 % |
+| Alerte (« ▼ sous le plan », annotation) | `#B5482A` |
+| Carte de chaleur ≥ 97 / 93–97 / 85–93 / < 85 % | `#DBE8FB` / `#9EC5F4` / `#3F7FD8` / `#163D73` |
 
 ---
 
 ## 6. Visuel par visuel
 
-### Bandeau
-- Forme **Rectangle**, remplissage `#1B2433`, bord gauche orange : un 2e rectangle de 6 px `#E07B4F`.
-- Titre : visuel **Carte (nouveau)** avec `[Titre du rapport]`, sans étiquette de catégorie,
-  texte blanc 20 pt, fond transparent. Le titre suit le segment de mois.
-- Badge : forme **rectangle arrondi** `#F3C09F`, texte « Données entièrement fictives ».
+### Titre ①
+Le bandeau est dans l'image. Pose seulement la **Carte (nouveau)** `[Titre du rapport]` :
+pas d'étiquette de catégorie, valeur en blanc, *Segoe UI Semibold* 20 pt, alignée à gauche.
+Le titre suit le segment de mois.
+
+### Segments ② ③
+Style **Liste déroulante**, en-tête du segment masqué. Fond blanc et bordure `#E3E6EB` arrondie
+à 6 : c'est la seule exception au « transparent », pour ressembler aux pastilles.
 
 ### Les 5 cartes d'indicateurs
 Visuel **Carte (nouveau)** : valeur principale + **Étiquette de référence** (*Reference label*)
@@ -170,6 +202,9 @@ pour la ligne du dessous.
 | Disponibilité moyenne | `[Disponibilité %]` | `[Texte disponibilité]` |
 | Arrêts non planifiés | `[Heures arrêts non planifiés]` (suffixe « h ») | `[Texte avis]` |
 | Cause principale | `[Cause principale]` | `[Texte cause]` |
+
+Réglages communs : valeur *Segoe UI Bold* 22 pt `#1B2433`, alignée à gauche ; étiquette de
+référence 9 pt `#5B6473` ; **pas d'étiquette de catégorie**, car le libellé est dans l'image.
 
 > Ancienne version de Power BI sans *Carte (nouveau)* : une carte classique pour la valeur, plus
 > une 2e carte (texte 9 pt, gris `#5B6473`) pour la mesure « Texte… », superposée dessous.
@@ -192,8 +227,8 @@ Visuel **Graphique en courbes et histogramme groupé** :
 Visuel **Graphique à barres groupées** :
 - **Axe Y** : `Dim_Unite[Unite]` ; **Axe X** : `[Disponibilité %]`. Trier par `Disponibilité %`
   décroissant.
-- Axe X : début **0,85**, fin **1**. Ajoute en sous-titre « échelle de 85 à 100 % » : l'axe ne
-  part pas de 0, il faut le dire.
+- Axe X : début **0,85**, fin **1**. Garde les étiquettes de l'axe X visibles (85 %, 90 %, 95 %, 100 %) : l'axe ne part pas de 0,
+  il faut que le lecteur le voie.
 - **Volet Analytique → Ligne constante X** = 0,95, style tirets, libellé « objectif 95 % ».
 - **Étiquettes de données → Valeur → champ** : `[Étiquette disponibilité]`. On lit ainsi
   « 92,6 % ▼ sous l'objectif » en texte, pas seulement en couleur.
@@ -206,8 +241,7 @@ Visuel **Matrice** :
   et seules les cases colorées restent. L'info-bulle affiche toujours la valeur.
 - Désactiver **sous-totaux et totaux** (lignes et colonnes). Largeur de colonne ≈ 16 px.
   Bordures blanches 2 px.
-- Légende : 4 petits carrés (formes) `#DBE8FB` ≥ 97 % · `#9EC5F4` 93–97 % · `#3F7FD8` 85–93 % ·
-  `#163D73` < 85 %, avec leurs libellés.
+- Légende : déjà dans l'image de fond, sous la matrice.
 
 ### Tableau « Principaux arrêts du mois »
 Visuel **Table** : `Fait_Arrets[Date]` (format `dd/MM`), `Fait_Arrets[Equipement]`,
@@ -216,8 +250,7 @@ Visuel **Table** : `Fait_Arrets[Date]` (format `dd/MM`), `Fait_Arrets[Equipement
 - Filtre du visuel : `Fait_Arrets[Num_Avis]` → **N premiers = 5** par `[Heures arrêts non planifiés]`.
 
 ### Pied de page
-Zone de texte 8 pt grise : « Chaîne de données : extractions SAP (PP, PM) → Cloud Storage →
-BigQuery → transformations SQL dbt → tableau de bord. Données entièrement fictives. »
+Déjà dans l'image de fond.
 
 ---
 
