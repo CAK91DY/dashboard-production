@@ -1,0 +1,29 @@
+﻿Code_Equipement,Equipement,Type_Equipement,Code_Ligne,Code_Unite
+F-101,Four de craquage F-101,Four,VAPO-L1,VAPO
+F-102,Four de craquage F-102,Four,VAPO-L1,VAPO
+K-150,Compresseur de gaz craqué K-150,Compresseur,VAPO-L1,VAPO
+P-130,Pompe d'huile de trempe P-130,Pompe,VAPO-L1,VAPO
+E-120,Échangeur de trempe E-120,Échangeur,VAPO-L1,VAPO
+C-160,Colonne de fractionnement C-160,Colonne,VAPO-L1,VAPO
+AT-45,Analyseur AT-45,Analyseur,VAPO-L1,VAPO
+K-410,Hypercompresseur K-410,Compresseur,PEBD-L1,PEBD
+R-420,Réacteur tubulaire R-420,Réacteur,PEBD-L1,PEBD
+P-118,Pompe P-118,Pompe,PEBD-L1,PEBD
+X-430,Extrudeuse X-430,Extrudeuse,PEBD-L1,PEBD
+K-411,Hypercompresseur K-411,Compresseur,PEBD-L2,PEBD
+R-421,Réacteur tubulaire R-421,Réacteur,PEBD-L2,PEBD
+P-119,Pompe P-119,Pompe,PEBD-L2,PEBD
+X-431,Extrudeuse X-431,Extrudeuse,PEBD-L2,PEBD
+K-201,Compresseur K-201,Compresseur,PP-L1,PP
+R-210,Réacteur R-210,Réacteur,PP-L1,PP
+X-101,Extrudeuse X-101,Extrudeuse,PP-L1,PP
+P-220,Pompe P-220,Pompe,PP-L1,PP
+K-202,Compresseur K-202,Compresseur,PP-L2,PP
+R-211,Réacteur R-211,Réacteur,PP-L2,PP
+X-102,Extrudeuse X-102,Extrudeuse,PP-L2,PP
+P-221,Pompe P-221,Pompe,PP-L2,PP
+E-310,Échangeur E-310,Échangeur,BUTA-L1,BUTA
+C-320,Colonne d'extraction C-320,Colonne,BUTA-L1,BUTA
+P-330,Pompe de solvant P-330,Pompe,BUTA-L1,BUTA
+K-350,Compresseur K-350,Compresseur,BUTA-L1,BUTA
+AT-340,Analyseur AT-340,Analyseur,BUTA-L1,BUTA
